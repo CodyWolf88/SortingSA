@@ -145,8 +145,8 @@
 	"kind" : "cmakeFiles",
 	"paths" : 
 	{
-		"build" : "C:/Users/minec/CLionProjects/SortingSA/cmake-build-debug",
-		"source" : "C:/Users/minec/CLionProjects/SortingSA"
+		"build" : "U:/CLionProjects/SortingSA/cmake-build-debug",
+		"source" : "U:/CLionProjects/SortingSA"
 	},
 	"version" : 
 	{

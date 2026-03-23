@@ -1,8 +1,7 @@
 #include <stdlib.h>
 
-#ifndef SORTINGSA_ARRAY_GENERATORS_H
-#define SORTINGSA_ARRAY_GENERATORS_H
-
-#endif //SORTINGSA_ARRAY_GENERATORS_H
-
-int* generate_unsorted_array(int n);
+void generate_sorted(int x[], int n);
+void generate_reverse_sorted(int x[], int n);
+void generate_nearly_sorted(int x[], int n);
+void generate_random(int x[], int n);
+void generate_flat(int x[], int n);
