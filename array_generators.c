@@ -15,7 +15,7 @@ void generate_sorted(int x[], int n)
 void generate_reverse_sorted(int x[], int n) {
     for (int i = 0; i < n; i++)
     {
-        x[i] = n - i;
+        x[i] = n - i - 1;
     }
 }
 

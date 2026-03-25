@@ -1,11 +1,10 @@
 #include "sorting_algorithms.h"
-
 #include <stdlib.h>
+#include <string.h>
 
 double insertion_sort(int x[], int n)
 {
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    clock_t start = clock();
 
     for (int i = 1; i < n; i++) {
         int aux = x[i];
@@ -17,19 +16,15 @@ double insertion_sort(int x[], int n)
         x[j+1] = aux;
     }
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    clock_t stop = clock();
 
-    double time = (end.tv_sec - start.tv_sec) * 1000.0;
-    time += (end.tv_nsec - start.tv_nsec) / 1000000.0;
-
-    return time;
+    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
 }
 
 
-double selection_sort(int x[], int n) {
-
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
+double selection_sort(int x[], int n)
+{
+    clock_t start = clock();
 
     for (int i = 0; i < n; i++)
     {
@@ -47,12 +42,9 @@ double selection_sort(int x[], int n) {
         }
     }
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    clock_t stop = clock();
 
-    double time = (end.tv_sec - start.tv_sec) * 1000.0;
-    time += (end.tv_nsec - start.tv_nsec) / 1000000.0;
-
-    return time;
+    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
 }
 
 
@@ -65,6 +57,9 @@ void swap(int *x, int *y)
 
 int partition(int x[], int low, int high)
 {
+    int random_index = low + rand() % (high - low + 1);
+    swap(&x[random_index], &x[high]);
+
     int pivot = x[high];
     int i = low - 1;
 
@@ -84,109 +79,93 @@ void quick_sort(int x[], int low, int high)
 {
     if (low < high)
     {
-        int pi = partition(x, low, high);
-        quick_sort(x, low, pi - 1);
-        quick_sort(x, pi + 1, high);
+        int pivot = partition(x, low, high);
+        quick_sort(x, low, pivot - 1);
+        quick_sort(x, pivot + 1, high);
     }
 }
 
 double quick_sort_wrapper(int x[], int n)
 {
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    clock_t start = clock();
 
     quick_sort(x, 0, n - 1);
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    clock_t stop = clock();
 
-    double time = (end.tv_sec - start.tv_sec) * 1000.0;
-    time += (end.tv_nsec - start.tv_nsec) / 1000000.0;
-
-    return time;
+    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
 }
 
 
-void merge(int x[], int low, int mid, int high)
+void merge(int x[], int temp[], int low, int mid, int high)
 {
-    int n1 = mid - low + 1;
-    int n2 = high - mid;
+    int i = low;
+    int j = mid + 1;
+    int k = low;
 
-    int *L = (int *) malloc((n1 * sizeof(int)));
-    int *H = (int *) malloc((n2 * sizeof(int)));
-
-    for (int i = 0; i < n1; i++)
+    while (i <= mid && j <= high)
     {
-        L[i] = x[low + i];
-    }
-
-    for (int i = 0; i < n2; i++)
-    {
-        H[i] = x[mid + 1 + i];
-    }
-
-    int i = 0, j = 0, k = low;
-    while (i < n1 && j < n2)
-    {
-        if (L[i] <= H[j])
+        if (x[i] <= x[j])
         {
-            x[k] = L[i];
-            i++;
+            temp[k++] = x[i++];
         }
         else
         {
-            x[k] = H[j];
-            j++;
+            temp[k++] = x[j++];
         }
-        k++;
     }
 
-    while (i < n1)
+    while (i <= mid)
     {
-        x[k] = L[i];
-        k++;
-        i++;
+        temp[k++] = x[i++];
     }
 
-    while (j < n2)
+    while (j <= high)
     {
-        x[k] = H[j];
-        k++;
-        j++;
+        temp[k++] = x[j++];
     }
 
-    free(L);
-    free(H);
+    for (int p = low; p <= high; p++)
+    {
+        x[p] = temp[p];
+    }
+
 }
 
-void merge_sort(int x[], int low, int high)
+void merge_sort(int x[], int temp[], int low, int high)
 {
     if (low < high)
     {
         int mid = low + (high - low) / 2;
-        merge_sort(x, low, mid);
-        merge_sort(x, mid + 1, high);
-        merge(x, low, mid, high);
+        merge_sort(x, temp, low, mid);
+        merge_sort(x, temp, mid + 1, high);
+        merge(x, temp, low, mid, high);
     }
 }
 
 double merge_sort_wrapper(int x[], int n)
 {
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    int *temp = (int*)malloc(n * sizeof(int));
+    if (temp == NULL)
+    {
+        return 0;
+    }
 
-    merge_sort(x, 0, n - 1);
+    clock_t start = clock();
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    double time = (end.tv_sec - start.tv_sec) * 1000.0;
-    time += (end.tv_nsec - start.tv_nsec) / 1000000.0;
+    merge_sort(x, temp, 0, n - 1);
 
-    return time;
+    clock_t stop = clock();
+
+    free(temp);
+
+    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
 }
+
 
 double counting_sort(int x[], int n)
 {
-    struct timespec start, end;
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    clock_t start = clock();
 
     if (n <= 0)
     {
@@ -221,12 +200,70 @@ double counting_sort(int x[], int n)
         count[x[i]]--;
     }
 
+    memcpy(x, output, n * sizeof(int));
+
     free(count);
     free(output);
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    double time = (end.tv_sec - start.tv_sec) * 1000.0;
-    time += (end.tv_nsec - start.tv_nsec) / 1000000.0;
+    clock_t stop = clock();
 
-    return time;
+    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
+}
+
+
+void counting_sort_radix(int x[], int n, int exp)
+{
+    int *output = (int*)malloc(n * sizeof(int));
+    int count[10] = {0};
+
+    for (int i = 0; i < n; i++)
+    {
+        count[(x[i]/ exp) % 10]++;
+    }
+
+    for (int i = 1; i < 10; i++)
+    {
+        count[i] += count[i - 1];
+    }
+
+    for (int i = n - 1; i >= 0; i--)
+    {
+        output[count[(x[i] / exp) % 10] - 1] = x[i];
+        count[(x[i] / exp) % 10]--;
+    }
+
+    for (int i = 0; i < n; i++)
+    {
+        x[i] = output[i];
+    }
+
+    free(output);
+}
+
+double radix_sort(int x[], int n)
+{
+    clock_t start = clock();
+
+    if (n <= 0)
+    {
+        return 0;
+    }
+
+    int max = x[0];
+    for (int i = 1; i < n; i++)
+    {
+        if (x[i] > max)
+        {
+            max = x[i];
+        }
+    }
+
+    for (int exp = 1; max / exp > 0; exp *= 10)
+    {
+        counting_sort_radix(x, n, exp);
+    }
+
+    clock_t stop = clock();
+
+    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
 }
