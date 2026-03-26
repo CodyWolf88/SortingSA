@@ -42,7 +42,7 @@ int get_runs(int size)
     switch (size)
     {
         case 10:
-            return 5000000;
+            return 10000000;
         case 20:
             return 1000000;
         case 50:
@@ -55,8 +55,6 @@ int get_runs(int size)
             return 100;
         case 100000:
             return 10;
-        case 1000000:
-            return 2;
         default:
             return 1;
     }
@@ -72,7 +70,7 @@ void run_tests(FILE *file, int n, int runs, void(*generator)(int[], int), char* 
         return;
     }
 
-    double insertion_sort_time = 0, selection_sort_time = 0, quick_sort_time = 0, merge_sort_time = 0, counting_sort_time = 0, radix_sort_time = 0;
+    double insertion_sort_time = 0, selection_sort_time = 0, bubble_sort_time = 0, quick_sort_time = 0, merge_sort_time = 0, counting_sort_time = 0, radix_sort_time = 0;
 
 
     for (int i = 0; i < runs; i++)
@@ -90,18 +88,22 @@ void run_tests(FILE *file, int n, int runs, void(*generator)(int[], int), char* 
         }
 
         // Limit O(n^2) algorithms, so we don't wait for hours
-        if (n <= 100000)
+        if (n <= 10000)
         {
             memcpy(copy, original, n * sizeof(int));
             insertion_sort_time += insertion_sort(copy, n);
 
             memcpy(copy, original, n * sizeof(int));
             selection_sort_time += selection_sort(copy, n);
+
+            memcpy(copy, original, n * sizeof(int));
+            bubble_sort_time += bubble_sort(copy, n);
         }
         else
         {
             insertion_sort_time = -1 * runs;
             selection_sort_time = -1 * runs;
+            bubble_sort_time = -1 * runs;
         }
 
         memcpy(copy, original, n * sizeof(int));
@@ -120,15 +122,15 @@ void run_tests(FILE *file, int n, int runs, void(*generator)(int[], int), char* 
     // Average time
     insertion_sort_time /= runs;
     selection_sort_time /= runs;
+    bubble_sort_time /= runs;
     quick_sort_time /= runs;
     merge_sort_time /= runs;
     counting_sort_time /= runs;
     radix_sort_time /= runs;
 
-    fprintf(file, "%d,%d,%s,%.5lf,%.5lf,%.5lf,%.5lf,%.5lf,%.5lf\n", n, runs, generator_name, insertion_sort_time, selection_sort_time, quick_sort_time, merge_sort_time, counting_sort_time, radix_sort_time);
+    fprintf(file, "%d,%d,%s,%.5lfms,%.5lfms,%.5lfms,%.5lfms,%.5lfms,%.5lfms,%.5lfms\n", n, runs, generator_name, insertion_sort_time, selection_sort_time, bubble_sort_time, quick_sort_time, merge_sort_time, counting_sort_time, radix_sort_time);
 
-    //printf("For %d lists of %d elements each the results are:\nInsertion sort - %.5lfms\nSelection sort - %.5lfms\nQuick sort - %.5lfms\nMerge sort - %.5lfms\nCounting sort - %.5lfms\n", runs, n, insertion_sort_time, selection_sort_time, quick_sort_time, merge_sort_time, counting_sort_time);
-    printf("Tested:\nn = %d\nruns = %d\ntype = %s\n", n, runs, generator_name);
+    printf("Tested:\nn = %d\nlists = %d\ntype = %s\n", n, runs, generator_name);
 
     free(original);
     free(copy);
@@ -146,9 +148,9 @@ int main(void) {
         return 1;
     }
 
-    fprintf(file, "Size,Runs,Generator,InsertionSort,SelectionSort,QuickSort,MergeSort,CountingSort,RadixSort\n");
+    fprintf(file, "Size,Lists,Generator,InsertionSort,SelectionSort,BubbleSort,QuickSort,MergeSort,CountingSort,RadixSort\n");
 
-    int size[] = {10, 20, 50, 100, 1000, 10000, 100000, 1000000, 10000000};
+    int size[] = {10, 20, 50, 100, 1000, 10000, 100000, 1000000};
     int num_size = sizeof(size) / sizeof(size[0]);
 
     void(*generators[])(int[], int) = {generate_random, generate_sorted, generate_reverse_sorted, generate_nearly_sorted, generate_flat};

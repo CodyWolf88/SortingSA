@@ -2,39 +2,70 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef TIMER_H
+#define TIMER_H
+
+#if defined(_WIN32) || defined(_WIN64)
+    #include <windows.h>
+#else
+    #include <time.h>
+    #include <unistd.h>
+#endif
+
+// Returns the time in ms, adaptated to the OS
+double get_time_ms()
+{
+#if defined(_WIN32) || defined(_WIN64)
+    LARGE_INTEGER count, frequency;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&count);
+    return (double)count.QuadPart * 1000.0 / frequency.QuadPart;
+#else
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (t.tv_sec * 1000.0) + (t.tv_nsec / 1000000.0);
+#endif
+}
+#endif
+
+
 double insertion_sort(int x[], int n)
 {
-    clock_t start = clock();
+    double start = get_time_ms();
 
     for (int i = 1; i < n; i++) {
         int aux = x[i];
         int j = i - 1;
+        // Move elem. > aux to the right
         while (j >= 0 && aux < x[j]) {
             x[j + 1] = x[j];
             j--;
         }
+        // Insert aux
         x[j+1] = aux;
     }
 
-    clock_t stop = clock();
+    double stop = get_time_ms();
 
-    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
+    return stop - start;
 }
 
 
 double selection_sort(int x[], int n)
 {
-    clock_t start = clock();
+    double start = get_time_ms();
 
     for (int i = 0; i < n; i++)
     {
         int k = i;
         for (int j = i + 1; j < n; j++)
         {
+            // Found a smaller elem.
             if (x[k] > x[j]) {
                 k = j;
             }
         }
+        // Found a new min
         if (k!=i) {
             int aux = x[i];
             x[i] = x[k];
@@ -42,9 +73,9 @@ double selection_sort(int x[], int n)
         }
     }
 
-    clock_t stop = clock();
+    double stop = get_time_ms();
 
-    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
+    return stop - start;
 }
 
 
@@ -55,8 +86,40 @@ void swap(int *x, int *y)
     *y = aux;
 }
 
+
+double bubble_sort(int x[], int n)
+{
+    double start = get_time_ms();
+
+    int swapped;
+    for (int i = 0; i < n - 1; i++)
+    {
+        swapped = 0;
+        for (int j = 0; j < n - i - 1; j++)
+        {
+            if (x[j] > x[j + 1])
+            {
+                swap(&x[j], &x[j + 1]);
+                swapped = 1; // Change occurred
+            }
+        }
+        // No change <=> sorted
+        if (swapped == 0)
+        {
+            break;
+        }
+    }
+
+    double stop = get_time_ms();
+
+    return stop - start;
+}
+
+
 int partition(int x[], int low, int high)
 {
+
+    // Pick a random pivot
     int random_index = low + rand() % (high - low + 1);
     swap(&x[random_index], &x[high]);
 
@@ -77,23 +140,34 @@ int partition(int x[], int low, int high)
 
 void quick_sort(int x[], int low, int high)
 {
-    if (low < high)
+    while (low < high)
     {
         int pivot = partition(x, low, high);
-        quick_sort(x, low, pivot - 1);
-        quick_sort(x, pivot + 1, high);
+
+        // Recursively sort the smaller part
+        if (pivot - low < high - pivot)
+        {
+            quick_sort(x, low, pivot - 1);
+            low = pivot + 1;
+        }
+        else
+        {
+            quick_sort(x, pivot + 1, high);
+            high = pivot - 1;
+        }
+
     }
 }
 
 double quick_sort_wrapper(int x[], int n)
 {
-    clock_t start = clock();
+    double start = get_time_ms();
 
     quick_sort(x, 0, n - 1);
 
-    clock_t stop = clock();
+    double stop = get_time_ms();
 
-    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
+    return stop - start;
 }
 
 
@@ -115,11 +189,11 @@ void merge(int x[], int temp[], int low, int mid, int high)
         }
     }
 
+    // Copy remaining elements if they exist
     while (i <= mid)
     {
         temp[k++] = x[i++];
     }
-
     while (j <= high)
     {
         temp[k++] = x[j++];
@@ -137,9 +211,9 @@ void merge_sort(int x[], int temp[], int low, int high)
     if (low < high)
     {
         int mid = low + (high - low) / 2;
-        merge_sort(x, temp, low, mid);
-        merge_sort(x, temp, mid + 1, high);
-        merge(x, temp, low, mid, high);
+        merge_sort(x, temp, low, mid); // Left sort
+        merge_sort(x, temp, mid + 1, high); // Right sort
+        merge(x, temp, low, mid, high); // Combine results
     }
 }
 
@@ -151,27 +225,28 @@ double merge_sort_wrapper(int x[], int n)
         return 0;
     }
 
-    clock_t start = clock();
+    double start = get_time_ms();
 
     merge_sort(x, temp, 0, n - 1);
 
-    clock_t stop = clock();
+    double stop = get_time_ms();
 
     free(temp);
 
-    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
+    return stop - start;
 }
 
 
 double counting_sort(int x[], int n)
 {
-    clock_t start = clock();
+    double start = get_time_ms();
 
     if (n <= 0)
     {
         return 0;
     }
 
+    // Find max number
     int max = x[0];
     for (int i = 1; i < n; i++)
     {
@@ -184,11 +259,13 @@ double counting_sort(int x[], int n)
     int *count = (int*)calloc(max + 1, sizeof(int));
     int *output = (int*)malloc(n * sizeof(int));
 
+    // Find occurrences
     for (int i = 0; i < n; i++)
     {
         count[x[i]]++;
     }
 
+    // Calculate sum
     for (int i = 1; i <= max; i++)
     {
         count[i] += count[i - 1];
@@ -205,9 +282,9 @@ double counting_sort(int x[], int n)
     free(count);
     free(output);
 
-    clock_t stop = clock();
+    double stop = get_time_ms();
 
-    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
+    return stop - start;
 }
 
 
@@ -242,7 +319,7 @@ void counting_sort_radix(int x[], int n, int exp)
 
 double radix_sort(int x[], int n)
 {
-    clock_t start = clock();
+    double start = get_time_ms();
 
     if (n <= 0)
     {
@@ -263,7 +340,7 @@ double radix_sort(int x[], int n)
         counting_sort_radix(x, n, exp);
     }
 
-    clock_t stop = clock();
+    double stop = get_time_ms();
 
-    return ((double)(stop - start) / CLOCKS_PER_SEC) * 1000.0;
+    return stop - start;
 }
