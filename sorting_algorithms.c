@@ -28,6 +28,7 @@ double get_time_ms()
 }
 #endif
 
+#define RUN 32
 
 double insertion_sort(int x[], int n)
 {
@@ -271,6 +272,7 @@ double counting_sort(int x[], int n)
         count[i] += count[i - 1];
     }
 
+    // Build the sorted list
     for (int i = n - 1; i >= 0; i--)
     {
         output[count[x[i]] - 1] = x[i];
@@ -342,5 +344,143 @@ double radix_sort(int x[], int n)
 
     double stop = get_time_ms();
 
+    return stop - start;
+}
+
+
+void heapify(int x[], int n, int i)
+{
+    int largest = i;
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
+
+    if (left < n && x[left] > x[largest])
+    {
+        largest = left;
+    }
+    if (right < n && x[right] > x[largest])
+    {
+        largest = right;
+    }
+
+    if (largest != i)
+    {
+        int temp = x[i];
+        x[i] = x[largest];
+        x[largest] = temp;
+        heapify(x, n, largest);
+    }
+}
+
+double heap_sort(int x[], int n)
+{
+    double start = get_time_ms();
+
+    for (int i = n / 2 - 1; i >= 0; i--)
+    {
+        heapify(x, n, i);
+    }
+
+    for (int i = n - 1; i > 0; i--)
+    {
+        swap(&x[0], &x[i]);
+        heapify(x, i, 0);
+    }
+
+    double stop = get_time_ms();
+    return stop - start;
+}
+
+
+void insertion_sort_range(int x[], int left, int right)
+{
+    for (int i = left + 1; i <= right; i++)
+    {
+        int temp = x[i];
+        int j = i - 1;
+        while (j >= left && x[j] > temp)
+        {
+            x[j + 1] = x[j];
+            j--;
+        }
+        x[j + 1] = temp;
+    }
+}
+
+void merge_timsort(int x[], int left, int mid, int right)
+{
+    int len1 = mid - left + 1, len2 = right - mid;
+
+    int *left_arr = (int*)malloc(len1 * sizeof(int));
+    int *right_arr = (int*)malloc(len2 * sizeof(int));
+
+    if (!left_arr || !right_arr)
+    {
+        free(left_arr);
+        free(right_arr);
+        return;
+    }
+
+    for (int i = 0; i < len1; i++)
+    {
+        left_arr[i] = x[left + i];
+    }
+    for (int i = 0; i < len2; i++)
+    {
+        right_arr[i] = x[mid + 1 + i];
+    }
+
+    int i = 0, j = 0, k = left;
+
+    while (i < len1 && j < len2)
+    {
+        if (left_arr[i] <= right_arr[j])
+        {
+            x[k++] = left_arr[i++];
+        }
+        else
+        {
+            x[k++] = right_arr[j++];
+        }
+    }
+
+    while (i < len1)
+    {
+        x[k++] = left_arr[i++];
+    }
+    while (j < len2)
+    {
+        x[k++] = right_arr[j++];
+    }
+
+    free(left_arr);
+    free(right_arr);
+}
+
+double tim_sort(int x[], int n)
+{
+    double start = get_time_ms();
+
+    for (int i = 0; i < n; i += RUN)
+    {
+        int end = (i + RUN - 1 < n - 1) ? (i + RUN - 1) : (n - 1);
+        insertion_sort_range(x, i, end);
+    }
+
+    for (int size = RUN; size <= n; size *= 2)
+    {
+        for (int left = 0; left < n; left += size * 2)
+        {
+            int mid = left + size - 1;
+            int right = (left + size * 2 - 1 < n - 1) ? (left + size * 2 - 1) : (n - 1);
+
+            if (mid < right)
+            {
+                merge_timsort(x, left, mid, right);
+            }
+        }
+    }
+
+    double stop = get_time_ms();
     return stop - start;
 }
